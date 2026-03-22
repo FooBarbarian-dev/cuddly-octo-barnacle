@@ -1,4 +1,5 @@
 defmodule Clio.Tags.LogTag do
+  @moduledoc "Join schema associating logs with tags, tracking who tagged and when."
   use Ecto.Schema
   import Ecto.Changeset
 

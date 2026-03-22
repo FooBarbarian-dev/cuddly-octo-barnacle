@@ -1,4 +1,5 @@
 defmodule Clio.Relations.Relation do
+  @moduledoc "Schema for discovered patterns (command sequences, co-occurrences, user/host patterns)."
   use Ecto.Schema
   import Ecto.Changeset
 

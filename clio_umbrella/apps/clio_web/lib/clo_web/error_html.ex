@@ -1,4 +1,5 @@
 defmodule CloWeb.ErrorHTML do
+  @moduledoc "HTML error response renderer."
   use CloWeb, :html
 
   def render(template, _assigns) do

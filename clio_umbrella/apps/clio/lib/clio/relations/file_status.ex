@@ -1,4 +1,5 @@
 defmodule Clio.Relations.FileStatus do
+  @moduledoc "Schema for DFIR file status tracking (ON_DISK, IN_MEMORY, ENCRYPTED, REMOVED, etc.)."
   use Ecto.Schema
   import Ecto.Changeset
 

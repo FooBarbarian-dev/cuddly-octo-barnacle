@@ -1,4 +1,5 @@
 defmodule CloWeb.ExportController do
+  @moduledoc "Controller for CSV/JSON log export and admin audit log retrieval."
   use CloWeb, :controller
 
   alias Clio.Logs

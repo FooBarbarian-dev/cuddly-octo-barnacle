@@ -1,4 +1,5 @@
 defmodule CloWeb.Router do
+  @moduledoc "API router with public, authenticated, and admin-only route scopes."
   use CloWeb, :router
 
   pipeline :api do

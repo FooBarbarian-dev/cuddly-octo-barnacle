@@ -1,4 +1,5 @@
 defmodule CloWeb.LogController do
+  @moduledoc "Controller for log entry CRUD, bulk operations, locking, and search."
   use CloWeb, :controller
 
   alias Clio.Logs

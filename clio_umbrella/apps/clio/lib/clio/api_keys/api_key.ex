@@ -1,4 +1,5 @@
 defmodule Clio.ApiKeys.ApiKey do
+  @moduledoc "Schema for API keys with permission scopes, expiration, and SHA-256 hashed storage."
   use Ecto.Schema
   import Ecto.Changeset
 

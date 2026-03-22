@@ -1,4 +1,5 @@
 defmodule CloWeb.TemplateController do
+  @moduledoc "Controller for log template CRUD operations."
   use CloWeb, :controller
 
   alias Clio.Repo

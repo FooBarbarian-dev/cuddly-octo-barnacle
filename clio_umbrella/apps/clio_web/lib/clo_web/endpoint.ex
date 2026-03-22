@@ -1,4 +1,5 @@
 defmodule CloWeb.Endpoint do
+  @moduledoc "Phoenix endpoint with session management, multipart uploads, and static file serving."
   use Phoenix.Endpoint, otp_app: :clio_web
 
   @session_options [

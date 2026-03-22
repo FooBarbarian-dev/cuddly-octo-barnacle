@@ -1,4 +1,5 @@
 defmodule Clio.Evidence.EvidenceFile do
+  @moduledoc "Schema for evidence file attachments with MIME validation, MD5 hashing, and 10MB size limit."
   use Ecto.Schema
   import Ecto.Changeset
 

@@ -1,4 +1,5 @@
 defmodule Clio.Templates.LogTemplate do
+  @moduledoc "Schema for reusable log entry templates with JSON template data."
   use Ecto.Schema
   import Ecto.Changeset
 

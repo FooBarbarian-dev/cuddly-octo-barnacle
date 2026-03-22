@@ -1,4 +1,5 @@
 defmodule CloWeb.ApiKeyController do
+  @moduledoc "Admin-only controller for API key management: creation, listing, and revocation."
   use CloWeb, :controller
 
   alias Clio.Repo

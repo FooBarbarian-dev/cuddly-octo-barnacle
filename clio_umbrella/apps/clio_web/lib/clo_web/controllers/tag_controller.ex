@@ -1,4 +1,5 @@
 defmodule CloWeb.TagController do
+  @moduledoc "Controller for tag CRUD, autocomplete, stats, and log-tag associations."
   use CloWeb, :controller
 
   alias Clio.Tags
