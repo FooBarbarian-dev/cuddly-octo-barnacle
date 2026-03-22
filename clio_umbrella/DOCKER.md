@@ -22,7 +22,6 @@ mix phx.server  # Start the application
 | Service | Image | Port | Purpose |
 |---------|-------|------|---------|
 | `postgres` | postgres:18-alpine | 5432 | PostgreSQL 18 database with SCRAM-SHA-256 auth |
-| `redis` | redis:7-alpine | 6379 | Redis 7 for caching and session storage |
 
 ### Optional Services
 
@@ -30,7 +29,6 @@ mix phx.server  # Start the application
 |---------|-------|------|---------|
 | `app` | clio:dev | 4000 | Application container (dev profile) |
 | `pgadmin` | dpage/pgadmin4 | 8080 | PostgreSQL web admin (tools profile) |
-| `redis-commander` | rediscommander/redis-commander | 8081 | Redis web admin (tools profile) |
 | `postgres_test` | postgres:18-alpine | 5433 | Test database (test profile) |
 
 ## Service Profiles
@@ -44,7 +42,7 @@ docker-compose up -d
 # Development profile (includes app container)
 docker-compose --profile dev up -d
 
-# Tools profile (includes pgAdmin & Redis Commander)
+# Tools profile (includes pgAdmin)
 docker-compose --profile tools up -d
 
 # Test profile (includes test database)
@@ -59,7 +57,7 @@ docker-compose --profile dev --profile tools up -d
 ### Service Management
 
 ```bash
-make up           # Start core services (postgres, redis)
+make up           # Start core services (postgres)
 make up-dev       # Start with application container
 make up-tools     # Start with management tools
 make up-all       # Start everything (dev + tools)
@@ -88,20 +86,12 @@ make backup-db    # Backup database
 make restore-db BACKUP_FILE=backup.sql  # Restore database
 ```
 
-### Redis Operations
-
-```bash
-make redis-cli    # Connect to Redis CLI
-make redis-flush  # Flush all Redis data
-```
-
 ### Logs and Monitoring
 
 ```bash
 make logs         # Show all service logs
 make logs-app     # Show application logs only
 make logs-postgres # Show PostgreSQL logs only
-make logs-redis   # Show Redis logs only
 make health       # Check service health
 ```
 
@@ -126,14 +116,13 @@ make test-watch   # Run tests in watch mode
 
 ```bash
 # Start services
-docker-compose up -d postgres redis
+docker-compose up -d postgres
 
 # Stop services
 docker-compose down
 
 # View logs
 docker-compose logs -f postgres
-docker-compose logs -f redis
 
 # Check status
 docker-compose ps
@@ -145,14 +134,8 @@ docker-compose ps
 # PostgreSQL shell
 docker-compose exec postgres psql -U postgres -d redteamlogger
 
-# Redis CLI
-docker-compose exec redis redis-cli
-
 # Check PostgreSQL is ready
 docker-compose exec postgres pg_isready -U postgres -d redteamlogger
-
-# Check Redis is ready
-docker-compose exec redis redis-cli ping
 ```
 
 ### Application Container
@@ -241,7 +224,6 @@ JWT_SECRET: dev_jwt_secret_at_least_32_bytes_long_for_development_only
 ```yaml
 volumes:
   - postgres_data:/var/lib/postgresql/data    # PostgreSQL data
-  - redis_data:/data                          # Redis data
   - pgadmin_data:/var/lib/pgadmin            # pgAdmin settings
   - ./data/app:/app/data                     # Application data (audit logs)
 ```
@@ -251,7 +233,6 @@ volumes:
 ```
 data/
 ├── postgres/     # PostgreSQL data files
-├── redis/        # Redis data files
 └── app/          # Application data (audit logs, uploads)
 ```
 
@@ -278,7 +259,7 @@ docker run --rm -v clio_postgres_data:/data -v $(pwd):/backup alpine tar czf /ba
 docker info
 
 # Check port conflicts
-netstat -tlnp | grep -E ':(4000|5432|6379|8080|8081)'
+netstat -tlnp | grep -E ':(4000|5432|8080)'
 
 # Check logs for errors
 make logs
@@ -299,11 +280,10 @@ make reset
 **Application won't connect:**
 ```bash
 # Check environment variables
-docker-compose exec app env | grep -E '(DATABASE|REDIS)'
+docker-compose exec app env | grep DATABASE
 
 # Check services are accessible
 docker-compose exec app ping postgres
-docker-compose exec app ping redis
 ```
 
 ### Reset Everything
@@ -326,15 +306,6 @@ make psql
 SHOW shared_buffers;
 SHOW max_connections;
 SHOW work_mem;
-```
-
-**Redis:**
-```bash
-# Check memory usage
-make redis-cli
-# In redis-cli:
-INFO memory
-CONFIG GET maxmemory
 ```
 
 ## Security Notes
@@ -361,7 +332,7 @@ CONFIG GET maxmemory
 openssl rand -base64 32  # JWT_SECRET
 openssl rand -base64 64  # SECRET_KEY_BASE
 openssl rand -hex 32     # FIELD_ENCRYPTION_KEY
-openssl rand -hex 32     # REDIS_ENCRYPTION_KEY
+openssl rand -hex 32     # CACHE_ENCRYPTION_KEY
 openssl rand -base64 32  # CLOAK_KEY
 ```
 
@@ -382,13 +353,6 @@ services:
       --health-timeout 5s
       --health-retries 5
 
-  redis:
-    image: redis:7
-    options: >-
-      --health-cmd "redis-cli ping"
-      --health-interval 10s
-      --health-timeout 5s
-      --health-retries 5
 ```
 
 ### GitLab CI Example
@@ -397,11 +361,8 @@ services:
 services:
   - name: postgres:18
     alias: postgres
-  - name: redis:7
-    alias: redis
 
 variables:
   POSTGRES_DB: redteamlogger_test
   POSTGRES_PASSWORD: postgres
-  REDIS_URL: redis://redis:6379
 ```

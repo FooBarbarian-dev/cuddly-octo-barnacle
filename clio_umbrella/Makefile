@@ -1,7 +1,7 @@
 # CLIO Development Makefile
 # Convenient commands for Docker-based development
 
-.PHONY: help setup up down logs build clean test migrate seed reset psql redis-cli
+.PHONY: help setup up down logs build clean test migrate seed reset psql
 
 # Default target
 help: ## Show this help message
@@ -10,22 +10,22 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "Profiles:"
-	@echo "  Default: postgres, redis (core services only)"
+	@echo "  Default: postgres (core services only)"
 	@echo "  dev:     Includes application container"
-	@echo "  tools:   Includes pgAdmin and Redis Commander"
+	@echo "  tools:   Includes pgAdmin"
 	@echo "  test:    Includes test database"
 
 # Initial setup
 setup: ## Create data directories and start services
-	mkdir -p data/postgres data/redis data/app
-	docker-compose up -d postgres redis
+	mkdir -p data/postgres data/app
+	docker-compose up -d postgres
 	@echo "Waiting for services to be ready..."
 	sleep 10
 	make migrate
 
 # Service management
-up: ## Start core services (postgres, redis)
-	docker-compose up -d postgres redis
+up: ## Start core services (postgres)
+	docker-compose up -d postgres
 
 up-dev: ## Start all services including application
 	docker-compose --profile dev up -d
@@ -50,9 +50,6 @@ logs-app: ## Show application logs
 
 logs-postgres: ## Show PostgreSQL logs
 	docker-compose logs -f postgres
-
-logs-redis: ## Show Redis logs
-	docker-compose logs -f redis
 
 # Application management
 build: ## Build application Docker image
@@ -80,13 +77,6 @@ psql: ## Connect to PostgreSQL database
 psql-test: ## Connect to test PostgreSQL database
 	docker-compose exec postgres_test psql -U postgres -d redteamlogger_test
 
-# Redis operations
-redis-cli: ## Connect to Redis CLI
-	docker-compose exec redis redis-cli
-
-redis-flush: ## Flush all Redis data
-	docker-compose exec redis redis-cli FLUSHALL
-
 # Testing
 test-setup: ## Start test database
 	docker-compose --profile test up -d postgres_test
@@ -113,8 +103,6 @@ clean-build: ## Remove application build artifacts
 health: ## Check service health
 	@echo "Checking PostgreSQL..."
 	@docker-compose exec postgres pg_isready -U postgres -d redteamlogger && echo "✅ PostgreSQL is ready" || echo "❌ PostgreSQL is not ready"
-	@echo "Checking Redis..."
-	@docker-compose exec redis redis-cli ping && echo "✅ Redis is ready" || echo "❌ Redis is not ready"
 
 # Development helpers
 dev: setup up-dev ## Quick start for development (setup + start with app)
@@ -135,7 +123,6 @@ tools: up-tools ## Start management tools
 	@echo ""
 	@echo "Tools:"
 	@echo "  - pgAdmin: http://localhost:8080 (admin@clio.local / admin)"
-	@echo "  - Redis Commander: http://localhost:8081"
 
 # Production-like setup
 prod-setup: ## Setup for production-like testing

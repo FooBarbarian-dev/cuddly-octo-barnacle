@@ -8,7 +8,7 @@ defmodule Clio.Application do
     children = [
       Clio.Repo,
       Clio.Vault,
-      {Clio.Redis.Pool, []},
+      {Clio.Cache, []},
       {Clio.Audit.Writer, []},
       {Clio.Export.RotationScheduler, []},
       {Clio.Logs.LockReaper, []}

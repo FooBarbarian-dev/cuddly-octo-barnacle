@@ -20,11 +20,7 @@ config :clio,
   admin_secret: "test_admin_secret_key_for_hmac",
   server_instance_id: "test_instance_001",
   data_dir: "test/tmp/data",
-  redis_encryption_key: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
-
-config :clio, Clio.Redis,
-  host: "localhost",
-  port: 6379
+  cache_encryption_key: "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
 
 config :logger, level: :warning
 

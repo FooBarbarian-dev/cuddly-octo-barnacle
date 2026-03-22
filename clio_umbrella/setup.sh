@@ -61,7 +61,6 @@ setup_directories() {
     print_status "Setting up directories..."
 
     mkdir -p data/postgres
-    mkdir -p data/redis
     mkdir -p data/app
 
     print_success "Directories created"
@@ -90,8 +89,8 @@ start_services() {
     # Stop any existing services
     docker-compose down >/dev/null 2>&1 || true
 
-    # Start PostgreSQL and Redis
-    docker-compose up -d postgres redis
+    # Start PostgreSQL
+    docker-compose up -d postgres
 
     print_status "Waiting for services to be ready..."
 
@@ -103,18 +102,6 @@ start_services() {
         sleep 2
         if [ $i -eq 30 ]; then
             print_error "PostgreSQL failed to start within 60 seconds"
-            exit 1
-        fi
-    done
-
-    # Wait for Redis to be ready
-    for i in {1..30}; do
-        if docker-compose exec -T redis redis-cli ping >/dev/null 2>&1; then
-            break
-        fi
-        sleep 2
-        if [ $i -eq 30 ]; then
-            print_error "Redis failed to start within 60 seconds"
             exit 1
         fi
     done
@@ -149,7 +136,6 @@ display_info() {
     echo
     echo -e "${BLUE}Services:${NC}"
     echo "  - PostgreSQL: localhost:5432"
-    echo "  - Redis: localhost:6379"
     echo "  - Application: Will be available at http://localhost:4000"
     echo
     echo -e "${BLUE}Default Credentials:${NC}"
@@ -169,14 +155,12 @@ display_info() {
     echo "  - make down        # Stop services"
     echo "  - make logs        # View logs"
     echo "  - make psql        # Connect to PostgreSQL"
-    echo "  - make redis-cli   # Connect to Redis"
     echo "  - make test        # Run tests"
     echo "  - make help        # Show all available commands"
     echo
     echo -e "${BLUE}Management Tools (optional):${NC}"
-    echo "  - make tools       # Start pgAdmin + Redis Commander"
+    echo "  - make tools       # Start pgAdmin"
     echo "  - pgAdmin: http://localhost:8080 (admin@clio.local / admin)"
-    echo "  - Redis Commander: http://localhost:8081"
     echo
 }
 

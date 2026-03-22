@@ -27,9 +27,9 @@ clio_umbrella/
 
 | Layer | Implementation |
 |-------|----------------|
-| Authentication | PBKDF2-HMAC-SHA256 (310k iterations), JWT (HS256) with Redis-backed revocation |
+| Authentication | PBKDF2-HMAC-SHA256 (310k iterations), JWT (HS256) with in-memory (Cachex) revocation |
 | Field Encryption | Cloak AES-GCM for sensitive database fields |
-| Redis Encryption | AES-256-GCM for all cached values |
+| Cache Encryption | AES-256-GCM for all cached values |
 | Admin Verification | HMAC-SHA256 admin proof on login |
 | Input Sanitization | XSS prevention, IP/MAC/username validation |
 | Rate Limiting | Hammer-based per-IP rate limiting (100 req/min general, 10 req/min auth) |
@@ -48,7 +48,6 @@ clio_umbrella/
 - Elixir >= 1.14
 - Erlang/OTP >= 25
 - PostgreSQL >= 18 (or >= 14 minimum)
-- Redis >= 7 (or >= 6 minimum)
 
 ### Docker Setup (Recommended)
 
@@ -62,7 +61,7 @@ cd clio_umbrella
 make dev
 
 # Or step by step:
-# 1. Start core services (PostgreSQL 18 + Redis 7)
+# 1. Start core services (PostgreSQL 18)
 make setup
 
 # 2. Install dependencies and run migrations
@@ -80,34 +79,32 @@ The API will be available at `http://localhost:4000/api`.
 
 ```bash
 # Core services only (recommended for development)
-make up                 # Start PostgreSQL + Redis
+make up                 # Start PostgreSQL
 make down              # Stop all services
 
 # With application container
 make up-dev            # Start all services including app
 
 # With management tools
-make up-tools          # Add pgAdmin + Redis Commander
+make up-tools          # Add pgAdmin
 make up-all           # Everything (dev + tools)
 
 # Useful commands
 make logs              # View all service logs
 make logs-app          # View application logs
 make psql             # Connect to PostgreSQL
-make redis-cli        # Connect to Redis
 make health           # Check service health
 ```
 
 #### Management Tools (Optional)
 
-Start with management tools for easy database and Redis administration:
+Start with management tools for easy database administration:
 
 ```bash
 make tools
 ```
 
 - **pgAdmin**: http://localhost:8080 (admin@clio.local / admin)
-- **Redis Commander**: http://localhost:8081
 
 #### PostgreSQL 18+ Authentication
 
@@ -161,15 +158,13 @@ For native installation, set these environment variables (or configure in `confi
 ```bash
 # Database (adjust for your PostgreSQL setup)
 export DATABASE_URL="ecto://postgres:postgres@localhost/redteamlogger"
-export REDIS_URL="redis://localhost:6379"
-
 # Security keys (generate secure ones for production)
 export JWT_SECRET="your-jwt-secret-at-least-32-bytes-long"
 export ADMIN_PASSWORD="AdminPassword123!"
 export USER_PASSWORD="UserPassword123!"
 export ADMIN_SECRET="your-admin-hmac-secret"
 export CLOAK_KEY="base64-encoded-32-byte-aes-key"
-export REDIS_ENCRYPTION_KEY="64-char-hex-string-for-redis-aes-256"
+export CACHE_ENCRYPTION_KEY="64-char-hex-string-for-cache-aes-256"
 export FIELD_ENCRYPTION_KEY="64-char-hex-string-for-field-aes-256"
 export SERVER_INSTANCE_ID="unique-server-id"
 

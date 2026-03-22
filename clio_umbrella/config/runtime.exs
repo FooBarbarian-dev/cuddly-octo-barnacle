@@ -14,21 +14,8 @@ if config_env() == :prod do
       verify: :verify_none
     ]
 
-  # Redis
-  redis_password = System.fetch_env!("REDIS_PASSWORD")
-  redis_ssl = System.get_env("REDIS_SSL", "true") == "true"
-  redis_host = System.get_env("REDIS_HOST", "redis")
-  redis_port = String.to_integer(System.get_env("REDIS_PORT", "6379"))
-
-  config :clio, Clio.Redis,
-    host: redis_host,
-    port: redis_port,
-    password: redis_password,
-    ssl: redis_ssl,
-    ssl_opts: [verify: :verify_none]
-
   # Encryption keys
-  config :clio, :redis_encryption_key, System.fetch_env!("REDIS_ENCRYPTION_KEY")
+  config :clio, :cache_encryption_key, System.fetch_env!("CACHE_ENCRYPTION_KEY")
   config :clio, :field_encryption_key, System.fetch_env!("FIELD_ENCRYPTION_KEY")
   config :clio, :jwt_secret, System.fetch_env!("JWT_SECRET")
   config :clio, :admin_secret, System.get_env("ADMIN_SECRET", "default_admin_secret")
@@ -75,7 +62,7 @@ if config_env() == :prod do
   end
 else
   # Dev/test defaults
-  config :clio, :redis_encryption_key,
+  config :clio, :cache_encryption_key,
     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
   config :clio, :field_encryption_key,
@@ -86,12 +73,6 @@ else
   config :clio, :admin_password, "AdminPassword123!"
   config :clio, :user_password, "UserPassword123!"
   config :clio, :server_instance_id, Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
-
-  config :clio, Clio.Redis,
-    host: "localhost",
-    port: 6379,
-    password: nil,
-    ssl: false
 
   config :clio, Clio.Vault,
     ciphers: [

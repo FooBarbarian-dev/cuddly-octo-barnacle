@@ -10,11 +10,6 @@ services:
       # Mount local data directory for development
       - ./data/postgres:/var/lib/postgresql/data
 
-  redis:
-    volumes:
-      # Mount local data directory for development
-      - ./data/redis:/data
-
   # Application container for development
   app:
     build:
@@ -30,11 +25,6 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DB: redteamlogger
 
-      # Redis configuration
-      REDIS_URL: "redis://redis:6379"
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-
       # Application secrets (development only)
       JWT_SECRET: "dev_jwt_secret_at_least_32_bytes_long_for_development_only"
       ADMIN_PASSWORD: "AdminPassword123!"
@@ -45,7 +35,7 @@ services:
       # Encryption keys (development only - DO NOT use in production)
       CLOAK_KEY: "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXRlcw=="
       FIELD_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-      REDIS_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      CACHE_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
       # Server configuration
       PORT: 4000
@@ -68,8 +58,6 @@ services:
       - ./data/app:/app/data
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - clio_network
@@ -107,9 +95,3 @@ volumes:
       type: none
       o: bind
       device: ./data/postgres
-  redis_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./data/redis

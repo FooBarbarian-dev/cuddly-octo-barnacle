@@ -31,7 +31,7 @@ defmodule Clio.MixProject do
     [
       {:ecto_sql, "~> 3.10"},
       {:postgrex, "~> 0.17"},
-      {:redix, "~> 1.2"},
+      {:cachex, "~> 4.0"},
       {:joken, "~> 2.6"},
       {:pbkdf2_elixir, "~> 2.0"},
       {:cloak, "~> 1.1"},
