@@ -11,10 +11,10 @@ defmodule CloWeb.Plugs.Auth do
       |> assign(:current_user, user)
       |> maybe_refresh_token(user)
     else
-      {:error, reason} ->
+      {:error, _reason} ->
         conn
         |> put_status(401)
-        |> Phoenix.Controller.json(%{error: "Unauthorized", reason: to_string(reason)})
+        |> Phoenix.Controller.json(%{error: "Unauthorized"})
         |> halt()
     end
   end

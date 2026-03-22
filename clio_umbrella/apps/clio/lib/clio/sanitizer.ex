@@ -13,12 +13,14 @@ defmodule Clio.Sanitizer do
   @shell_fields ~w(command notes filename secrets)a
 
   def sanitize_params(params) when is_map(params) do
-    Map.new(params, fn {k, v} ->
-      key = if is_binary(k), do: String.to_existing_atom(k), else: k
-      {k, sanitize_field(key, v)}
+    try do
+      Map.new(params, fn {k, v} ->
+        key = if is_binary(k), do: String.to_existing_atom(k), else: k
+        {k, sanitize_field(key, v)}
+      end)
     rescue
       ArgumentError -> Map.new(params, fn {k, v} -> {k, sanitize_value(v)} end)
-    end)
+    end
   end
 
   def sanitize_params(params), do: params

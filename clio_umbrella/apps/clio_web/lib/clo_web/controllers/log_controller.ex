@@ -97,6 +97,7 @@ defmodule CloWeb.LogController do
     case Logs.lock_log(id, user.username) do
       {:ok, log} -> json(conn, %{data: serialize_log(log)})
       {:error, :not_found} -> conn |> put_status(404) |> json(%{error: "Log not found"})
+      {:error, :locked_by_another_user} -> conn |> put_status(423) |> json(%{error: "Log is locked by another user"})
     end
   end
 

@@ -43,16 +43,16 @@ defmodule CloWeb.Router do
     post "/logs/:id/lock", LogController, :lock
     post "/logs/:id/unlock", LogController, :unlock
 
-    # Tags
-    resources "/tags", TagController, except: [:new, :edit]
+    # Tags — static routes must come before :id routes
     get "/tags/search/autocomplete", TagController, :autocomplete
     get "/tags/stats/usage", TagController, :stats
+    resources "/tags", TagController, except: [:new, :edit]
     post "/logs/:log_id/tags/:tag_id", TagController, :add_to_log
     delete "/logs/:log_id/tags/:tag_id", TagController, :remove_from_log
 
-    # Operations
-    resources "/operations", OperationController, except: [:new, :edit]
+    # Operations — static routes must come before :id routes
     get "/operations/mine/list", OperationController, :my_operations
+    resources "/operations", OperationController, except: [:new, :edit]
     post "/operations/:id/assign", OperationController, :assign_user
     delete "/operations/:id/assign/:username", OperationController, :unassign_user
     post "/operations/:id/activate", OperationController, :set_active

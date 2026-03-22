@@ -144,10 +144,9 @@ defmodule Clio.Logs do
 
   def update_log(id, attrs, user) do
     with {:ok, log} <- get_log(id),
-         :ok <- check_lock(log, user) do
-      log
-      |> Log.changeset(attrs)
-      |> Repo.update()
+         :ok <- check_lock(log, user),
+         {:ok, updated} <- log |> Log.changeset(attrs) |> Repo.update() do
+      {:ok, Repo.preload(updated, [:tags, :log_tags, :evidence_files], force: true)}
     end
   end
 
@@ -184,9 +183,18 @@ defmodule Clio.Logs do
 
   def lock_log(id, username) do
     with {:ok, log} <- get_log(id) do
-      log
-      |> Ecto.Changeset.change(%{locked: true, locked_by: username})
-      |> Repo.update()
+      cond do
+        log.locked and log.locked_by == username ->
+          {:ok, log}
+
+        log.locked ->
+          {:error, :locked_by_another_user}
+
+        true ->
+          log
+          |> Ecto.Changeset.change(%{locked: true, locked_by: username})
+          |> Repo.update()
+      end
     end
   end
 
@@ -225,12 +233,21 @@ defmodule Clio.Logs do
         {"internal_ip", v}, acc -> [{:internal_ip, v} | acc]
         {"command", v}, acc -> [{:command, v} | acc]
         {"username", v}, acc -> [{:username, v} | acc]
-        {"dateFrom", v}, acc -> [{:date_from, v} | acc]
-        {"dateTo", v}, acc -> [{:date_to, v} | acc]
+        {"dateFrom", v}, acc -> [{:date_from, parse_datetime(v)} | acc]
+        {"dateTo", v}, acc -> [{:date_to, parse_datetime(v)} | acc]
         {"limit", v}, acc -> [{:limit, String.to_integer(v)} | acc]
         _, acc -> acc
       end)
 
     list_logs(user, opts)
   end
+
+  defp parse_datetime(value) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, dt, _offset} -> dt
+      _ -> nil
+    end
+  end
+
+  defp parse_datetime(value), do: value
 end

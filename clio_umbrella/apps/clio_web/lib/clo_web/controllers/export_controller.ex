@@ -81,6 +81,13 @@ defmodule CloWeb.ExportController do
 
   defp csv_escape(nil), do: ""
   defp csv_escape(value) do
+    # Prevent CSV formula injection by prefixing dangerous chars with a single quote
+    value = if String.starts_with?(value, ["=", "+", "-", "@", "\t", "\r"]) do
+      "'" <> value
+    else
+      value
+    end
+
     if String.contains?(value, [",", "\"", "\n"]) do
       "\"#{String.replace(value, "\"", "\"\"")}\""
     else

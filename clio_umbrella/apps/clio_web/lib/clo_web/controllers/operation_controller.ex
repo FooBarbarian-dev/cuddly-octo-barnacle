@@ -64,9 +64,15 @@ defmodule CloWeb.OperationController do
   def set_active(conn, %{"id" => id}) do
     user = conn.assigns.current_user
 
-    case Operations.set_primary_operation(user.username, String.to_integer(id)) do
-      {:ok, _} -> json(conn, %{message: "Active operation set"})
-      {:error, :not_assigned} -> conn |> put_status(422) |> json(%{error: "Not assigned to this operation"})
+    case Integer.parse(id) do
+      {op_id, ""} ->
+        case Operations.set_primary_operation(user.username, op_id) do
+          {:ok, _} -> json(conn, %{message: "Active operation set"})
+          {:error, :not_assigned} -> conn |> put_status(422) |> json(%{error: "Not assigned to this operation"})
+        end
+
+      _ ->
+        conn |> put_status(400) |> json(%{error: "Invalid operation ID"})
     end
   end
 

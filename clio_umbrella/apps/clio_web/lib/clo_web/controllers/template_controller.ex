@@ -45,8 +45,12 @@ defmodule CloWeb.TemplateController do
 
   def delete(conn, %{"id" => id}) do
     case Repo.get(LogTemplate, id) do
-      nil -> conn |> put_status(404) |> json(%{error: "Template not found"})
-      template -> Repo.delete!(template); json(conn, %{message: "Template deleted"})
+      nil ->
+        conn |> put_status(404) |> json(%{error: "Template not found"})
+
+      template ->
+        {:ok, _} = Repo.delete(template)
+        json(conn, %{message: "Template deleted"})
     end
   end
 
