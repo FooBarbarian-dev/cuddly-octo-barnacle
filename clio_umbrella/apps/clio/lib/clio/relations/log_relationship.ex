@@ -1,4 +1,5 @@
 defmodule Clio.Relations.LogRelationship do
+  @moduledoc "Schema for relationships between log entries (parent_child, linked, dependency, correlation)."
   use Ecto.Schema
   import Ecto.Changeset
 

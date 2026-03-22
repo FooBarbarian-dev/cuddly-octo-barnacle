@@ -1,4 +1,5 @@
 defmodule CloWeb.AuthController do
+  @moduledoc "Authentication controller: login, token verification, logout, and password changes."
   use CloWeb, :controller
 
   alias Clio.Auth

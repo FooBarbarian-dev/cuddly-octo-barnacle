@@ -1,4 +1,5 @@
 defmodule Clio.Relations.TagRelationship do
+  @moduledoc "Schema for tag co-occurrence and sequence relationships with correlation strength."
   use Ecto.Schema
   import Ecto.Changeset
 

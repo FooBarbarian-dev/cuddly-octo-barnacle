@@ -1,4 +1,5 @@
 defmodule Clio.Relations.FileStatusHistory do
+  @moduledoc "Schema for tracking file status changes over time for forensic analysis."
   use Ecto.Schema
   import Ecto.Changeset
 

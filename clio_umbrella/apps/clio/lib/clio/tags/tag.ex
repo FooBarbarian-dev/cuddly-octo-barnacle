@@ -1,4 +1,5 @@
 defmodule Clio.Tags.Tag do
+  @moduledoc "Schema for categorized tags with operation tag protection (op: prefix)."
   use Ecto.Schema
   import Ecto.Changeset
 

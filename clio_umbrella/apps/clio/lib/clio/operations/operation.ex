@@ -1,4 +1,5 @@
 defmodule Clio.Operations.Operation do
+  @moduledoc "Schema for red team operations/campaigns with linked tags and user assignments."
   use Ecto.Schema
   import Ecto.Changeset
 

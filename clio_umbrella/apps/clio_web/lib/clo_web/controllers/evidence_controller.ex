@@ -1,4 +1,5 @@
 defmodule CloWeb.EvidenceController do
+  @moduledoc "Controller for evidence file upload, download, and deletion with MD5 verification."
   use CloWeb, :controller
 
   alias Clio.Repo

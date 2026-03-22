@@ -1,4 +1,5 @@
 defmodule Clio.Logs.Log do
+  @moduledoc "Schema for red team log entries with forensic fields, row-level locking, and encrypted secrets."
   use Ecto.Schema
   import Ecto.Changeset
 

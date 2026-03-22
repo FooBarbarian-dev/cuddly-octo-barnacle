@@ -1,4 +1,5 @@
 defmodule Clio.Operations.UserOperation do
+  @moduledoc "Schema for user-to-operation assignment tracking with primary flag and access timestamps."
   use Ecto.Schema
   import Ecto.Changeset
 

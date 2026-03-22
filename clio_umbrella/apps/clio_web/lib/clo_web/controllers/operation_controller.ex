@@ -1,4 +1,5 @@
 defmodule CloWeb.OperationController do
+  @moduledoc "Controller for operation CRUD, user assignment, and active operation management."
   use CloWeb, :controller
 
   alias Clio.Operations
