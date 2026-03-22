@@ -40,12 +40,88 @@ clio_umbrella/
 
 ### Prerequisites
 
+**Option 1: Docker (Recommended)**
+- Docker >= 20.10
+- Docker Compose >= 2.0
+
+**Option 2: Native Installation**
 - Elixir >= 1.14
 - Erlang/OTP >= 25
-- PostgreSQL >= 14
-- Redis >= 6
+- PostgreSQL >= 18 (or >= 14 minimum)
+- Redis >= 7 (or >= 6 minimum)
 
-### Setup
+### Docker Setup (Recommended)
+
+The easiest way to get started is using Docker Compose, which includes PostgreSQL 18 with proper authentication setup:
+
+```bash
+# Clone and enter the umbrella
+cd clio_umbrella
+
+# Quick development setup
+make dev
+
+# Or step by step:
+# 1. Start core services (PostgreSQL 18 + Redis 7)
+make setup
+
+# 2. Install dependencies and run migrations
+mix deps.get
+mix ecto.migrate
+mix run apps/clio/priv/repo/seeds.exs
+
+# 3. Start the application
+mix phx.server
+```
+
+The API will be available at `http://localhost:4000/api`.
+
+#### Docker Services
+
+```bash
+# Core services only (recommended for development)
+make up                 # Start PostgreSQL + Redis
+make down              # Stop all services
+
+# With application container
+make up-dev            # Start all services including app
+
+# With management tools
+make up-tools          # Add pgAdmin + Redis Commander
+make up-all           # Everything (dev + tools)
+
+# Useful commands
+make logs              # View all service logs
+make logs-app          # View application logs
+make psql             # Connect to PostgreSQL
+make redis-cli        # Connect to Redis
+make health           # Check service health
+```
+
+#### Management Tools (Optional)
+
+Start with management tools for easy database and Redis administration:
+
+```bash
+make tools
+```
+
+- **pgAdmin**: http://localhost:8080 (admin@clio.local / admin)
+- **Redis Commander**: http://localhost:8081
+
+#### PostgreSQL 18+ Authentication
+
+This setup uses PostgreSQL 18 with the new SCRAM-SHA-256 authentication method (default since PostgreSQL 18). The Docker configuration automatically handles this with:
+
+```yaml
+POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+```
+
+If you need to use older PostgreSQL versions (14-17), they default to md5 authentication and don't require special configuration.
+
+### Native Setup
+
+If you prefer to install dependencies locally:
 
 ```bash
 # Clone and enter the umbrella
@@ -53,9 +129,6 @@ cd clio_umbrella
 
 # Install dependencies
 mix deps.get
-
-# Configure environment (see Configuration section)
-cp config/dev.exs.example config/dev.exs  # or edit dev.exs directly
 
 # Create and migrate database
 mix ecto.setup
@@ -68,24 +141,60 @@ The API will be available at `http://localhost:4000/api`.
 
 ### Configuration
 
-Set these environment variables (or configure in `config/runtime.exs`):
+#### Docker Configuration
+
+When using Docker, configuration is handled automatically. You can customize settings by:
+
+1. **Copy the example environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit `.env` with your preferences** (optional for development)
+
+3. **The Docker setup uses secure defaults** for development
+
+#### Manual Configuration
+
+For native installation, set these environment variables (or configure in `config/runtime.exs`):
 
 ```bash
-# Required
-export DATABASE_URL="ecto://postgres:postgres@localhost/clio_dev"
+# Database (adjust for your PostgreSQL setup)
+export DATABASE_URL="ecto://postgres:postgres@localhost/redteamlogger"
 export REDIS_URL="redis://localhost:6379"
-export JWT_SECRET="your-secret-key-at-least-32-bytes"
-export ADMIN_PASSWORD="initial-admin-password"
-export USER_PASSWORD="initial-user-password"
-export ADMIN_SECRET="hmac-secret-for-admin-proof"
+
+# Security keys (generate secure ones for production)
+export JWT_SECRET="your-jwt-secret-at-least-32-bytes-long"
+export ADMIN_PASSWORD="AdminPassword123!"
+export USER_PASSWORD="UserPassword123!"
+export ADMIN_SECRET="your-admin-hmac-secret"
 export CLOAK_KEY="base64-encoded-32-byte-aes-key"
-export REDIS_ENCRYPTION_KEY="64-char-hex-string-for-redis-aes"
+export REDIS_ENCRYPTION_KEY="64-char-hex-string-for-redis-aes-256"
+export FIELD_ENCRYPTION_KEY="64-char-hex-string-for-field-aes-256"
 export SERVER_INSTANCE_ID="unique-server-id"
 
 # Optional
 export SECRET_KEY_BASE="phoenix-secret-key-base-64-bytes"
 export PORT=4000
 export DATA_DIR="data"  # where audit logs are stored
+```
+
+#### Generating Secure Keys
+
+For production, generate cryptographically secure keys:
+
+```bash
+# JWT Secret (32+ bytes)
+openssl rand -base64 32
+
+# Phoenix Secret Key Base (64+ bytes)  
+openssl rand -base64 64
+
+# AES-256 Keys (32 bytes = 64 hex characters)
+openssl rand -hex 32
+
+# Base64 AES Key for Cloak
+openssl rand -base64 32
 ```
 
 ### First Steps
@@ -319,6 +428,22 @@ tags ──> tag_relationships (co-occurrence analysis)
 
 ## Testing
 
+### With Docker
+
+```bash
+# Start test database and run tests
+make test
+
+# Run tests in watch mode
+make test-watch
+
+# Run specific app tests
+cd apps/clio && mix test
+cd apps/clio_web && mix test
+```
+
+### Native Testing
+
 ```bash
 # Run all tests
 mix test
@@ -342,6 +467,32 @@ Test coverage includes:
 
 ## Development
 
+### Docker Development
+
+```bash
+# Quick start everything
+make dev
+
+# Development workflow
+make up                    # Start services
+mix deps.get              # Install dependencies  
+mix ecto.migrate          # Run migrations
+iex -S mix phx.server     # Start with IEx shell
+
+# Database operations
+make migrate              # Run migrations
+make seed                 # Run seeds
+make reset                # Reset database
+make psql                 # Connect to database
+
+# Useful commands
+make shell                # Shell into app container
+make iex                  # IEx in app container
+make logs-app             # View app logs
+```
+
+### Native Development
+
 ```bash
 # Start with IEx shell
 iex -S mix phx.server
@@ -354,6 +505,16 @@ mix ecto.reset
 
 # Generate a migration
 mix ecto.gen.migration migration_name
+```
+
+### Database Backup & Restore
+
+```bash
+# Backup database
+make backup-db
+
+# Restore from backup
+make restore-db BACKUP_FILE=backup_20240101_120000.sql
 ```
 
 ## License

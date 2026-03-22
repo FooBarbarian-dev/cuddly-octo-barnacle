@@ -1,0 +1,94 @@
+# Elixir/Phoenix ignores
+/_build
+/cover
+/deps
+/doc
+*.ez
+*.beam
+/config/*.secret.exs
+.elixir_ls/
+
+# Erlang ignores
+.rebar3
+_*
+*.orig
+*.rej
+*.so
+*.plt
+*.dyn
+
+# Phoenix ignores
+erl_crash.dump
+
+# Static artifacts
+/apps/*/priv/static/assets/
+/apps/*/priv/static/cache_manifest.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Docker development data
+data/
+docker-volumes/
+
+# Logs
+*.log
+logs/
+log/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+\#*\#
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Coverage reports
+cover/
+coverage/
+.coverage
+
+# Documentation
+doc/
+
+# Node.js (if using any JS tooling)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Backup files
+*.bak
+*.backup
+backup_*.sql
+
+# Local development overrides
+docker-compose.local.yml
+local.mk
+
+# IDE-specific files
+.elixir_ls/
+.mix_tasks

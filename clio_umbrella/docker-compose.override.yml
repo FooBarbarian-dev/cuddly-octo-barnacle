@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # Development overrides for existing services
+  postgres:
+    environment:
+      # Additional development settings
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    volumes:
+      # Mount local data directory for development
+      - ./data/postgres:/var/lib/postgresql/data
+
+  redis:
+    volumes:
+      # Mount local data directory for development
+      - ./data/redis:/data
+
+  # Application container for development
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: clio_app
+    environment:
+      # Database configuration
+      DATABASE_URL: "ecto://postgres:postgres@postgres:5432/redteamlogger"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: redteamlogger
+
+      # Redis configuration
+      REDIS_URL: "redis://redis:6379"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Application secrets (development only)
+      JWT_SECRET: "dev_jwt_secret_at_least_32_bytes_long_for_development_only"
+      ADMIN_PASSWORD: "AdminPassword123!"
+      USER_PASSWORD: "UserPassword123!"
+      ADMIN_SECRET: "dev_admin_secret_for_hmac_proof"
+      SECRET_KEY_BASE: "dev_secret_key_base_that_is_at_least_64_bytes_long_for_development_only_phoenix"
+
+      # Encryption keys (development only - DO NOT use in production)
+      CLOAK_KEY: "dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXRlcw=="
+      FIELD_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      REDIS_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+      # Server configuration
+      PORT: 4000
+      HOSTNAME: localhost
+      SERVER_INSTANCE_ID: "dev-instance"
+
+      # Data directory
+      DATA_DIR: "/app/data"
+
+      # Mix environment
+      MIX_ENV: dev
+    ports:
+      - "4000:4000"
+    volumes:
+      # Mount source code for live reloading
+      - .:/app
+      - /app/deps
+      - /app/_build
+      # Mount data directory for audit logs
+      - ./data/app:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - clio_network
+    profiles:
+      - dev
+
+  # Test database for running tests
+  postgres_test:
+    image: postgres:18-alpine
+    container_name: clio_postgres_test
+    environment:
+      POSTGRES_DB: redteamlogger_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d redteamlogger_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clio_network
+    profiles:
+      - test
+
+volumes:
+  # Override volumes to use local directories
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
