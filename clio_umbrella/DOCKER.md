@@ -244,19 +244,25 @@ mix phx.server
 
 ## Security Notes
 
-### Development vs Production
+> **PoC mode — convenience over security.** SSL/TLS and reverse-proxy setup are
+> intentionally omitted to keep the getting-started experience simple. See the
+> items marked SKIPPED in `.env.example` for what needs to be addressed before
+> any real deployment.
 
-**Development (Docker Compose):**
-- Uses default passwords (change immediately after first login)
-- No SSL/TLS encryption
-- Exposes all ports to localhost
+### Current setup (no SSL)
 
-**Production:**
-- Generate secure random passwords and keys (see `.env.example` for commands)
-- Enable SSL/TLS for database connections
-- Use proper firewall rules and a secrets management system
+- Runs plain HTTP — no TLS on the web endpoint or the database connection.
+- Default credentials are used out of the box.
+- All ports exposed to localhost only (Docker default).
 
-### Key Generation for Production
+### What to add for production
+
+- Put the app behind a TLS-terminating reverse proxy (nginx, traefik, caddy, etc.)
+- Enable `ssl: true` on the Postgres connection in `config/runtime.exs`
+- Rotate all secrets/passwords (see key generation commands below)
+- Use a secrets management system instead of a plain `.env` file
+
+### Key Generation
 
 ```bash
 openssl rand -base64 32   # JWT_SECRET, ADMIN_SECRET, CLOAK_KEY
