@@ -51,25 +51,44 @@ clio_umbrella/
 
 ### Docker Setup (Recommended)
 
-The easiest way to get started is using Docker Compose, which includes PostgreSQL 18 with proper authentication setup:
+Docker is used for PostgreSQL. The application runs natively via `mix`, giving you hot code reloading and easy debugging.
+
+**Option A: Automated first-time setup**
 
 ```bash
-# Clone and enter the umbrella
 cd clio_umbrella
 
-# Quick development setup
+# One command does everything: starts postgres, installs deps, migrates, seeds
 make dev
 
-# Or step by step:
-# 1. Start core services (PostgreSQL 18)
-make setup
+# Then start the application
+mix phx.server
+```
 
-# 2. Install dependencies and run migrations
+**Option B: Step by step**
+
+```bash
+cd clio_umbrella
+
+# 1. Start PostgreSQL (waits until ready)
+make up
+
+# 2. Install dependencies
 mix deps.get
-mix ecto.migrate
-mix run apps/clio/priv/repo/seeds.exs
 
-# 3. Start the application
+# 3. Create database, run migrations, and load seed data
+mix ecto.setup
+
+# 4. Start the application
+mix phx.server
+```
+
+**Option C: Automated script (handles all of the above)**
+
+```bash
+cd clio_umbrella
+./setup.sh
+# When complete:
 mix phx.server
 ```
 
@@ -79,20 +98,15 @@ The admin panel will be available at `http://localhost:4000/admin`.
 #### Docker Services
 
 ```bash
-# Core services only (recommended for development)
+# Core services
 make up                 # Start PostgreSQL
 make down              # Stop all services
 
-# With application container
-make up-dev            # Start all services including app
-
 # With management tools
 make up-tools          # Add pgAdmin
-make up-all           # Everything (dev + tools)
 
 # Useful commands
 make logs              # View all service logs
-make logs-app          # View application logs
 make psql             # Connect to PostgreSQL
 make health           # Check service health
 ```
@@ -535,25 +549,20 @@ Test coverage includes:
 ### Docker Development
 
 ```bash
-# Quick start everything
+# First-time setup (start postgres + install deps + migrate + seed)
 make dev
 
-# Development workflow
-make up                    # Start services
-mix deps.get              # Install dependencies  
+# Day-to-day workflow
+make up                    # Start PostgreSQL
+mix deps.get              # Install dependencies
 mix ecto.migrate          # Run migrations
 iex -S mix phx.server     # Start with IEx shell
 
 # Database operations
 make migrate              # Run migrations
 make seed                 # Run seeds
-make reset                # Reset database
+make reset                # Reset database (drop, create, migrate, seed)
 make psql                 # Connect to database
-
-# Useful commands
-make shell                # Shell into app container
-make iex                  # IEx in app container
-make logs-app             # View app logs
 ```
 
 ### Native Development
