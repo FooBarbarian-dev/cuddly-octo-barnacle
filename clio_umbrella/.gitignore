@@ -86,7 +86,7 @@ yarn-error.log*
 backup_*.sql
 
 # Local development overrides
-docker-compose.local.yml
+compose.local.yaml
 local.mk
 
 # IDE-specific files

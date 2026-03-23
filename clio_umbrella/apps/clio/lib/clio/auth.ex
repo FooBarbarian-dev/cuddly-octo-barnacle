@@ -1,7 +1,7 @@
 defmodule Clio.Auth do
   @moduledoc "Authentication context: login, password management, JWT, session verification."
 
-  alias Clio.Redis
+  alias Clio.Cache
 
   @jwt_lifetime_seconds 8 * 60 * 60
   @refresh_threshold 0.75
@@ -30,13 +30,13 @@ defmodule Clio.Auth do
   end
 
   defp check_password(username, password) do
-    # Check custom password in Redis first
-    case Redis.get("admin:password:#{username}") do
+    # Check custom password in cache first
+    case Cache.get("admin:password:#{username}") do
       {:ok, hash} when not is_nil(hash) ->
         if verify_password(password, hash), do: {:ok, :admin}, else: {:error, :invalid_credentials}
 
       _ ->
-        case Redis.get("user:password:#{username}") do
+        case Cache.get("user:password:#{username}") do
           {:ok, hash} when not is_nil(hash) ->
             if verify_password(password, hash), do: {:ok, :user}, else: {:error, :invalid_credentials}
 
@@ -60,7 +60,7 @@ defmodule Clio.Auth do
 
   defp has_custom_password?(username, role) do
     prefix = if role == :admin, do: "admin", else: "user"
-    Redis.exists?("#{prefix}:password:#{username}")
+    Cache.exists?("#{prefix}:password:#{username}")
   end
 
   # ── Password Change ──
@@ -70,7 +70,7 @@ defmodule Clio.Auth do
          :ok <- validate_password_policy(new_password) do
       hash = hash_password(new_password)
       prefix = if role == :admin, do: "admin", else: "user"
-      Redis.set("#{prefix}:password:#{username}", hash)
+      Cache.set("#{prefix}:password:#{username}", hash)
     end
   end
 
@@ -142,10 +142,10 @@ defmodule Clio.Auth do
     signer = Joken.Signer.create("HS256", jwt_secret())
     {:ok, token, _claims} = Joken.encode_and_sign(claims, signer)
 
-    # Store in Redis
+    # Store in cache
     jwt_value = "username::#{user.username}::role::#{user.role}::issuedAt::#{now}"
-    Redis.setex("jwt:#{jti}", @jwt_lifetime_seconds, jwt_value)
-    Redis.sadd("user:#{user.username}:tokens", jti)
+    Cache.setex("jwt:#{jti}", @jwt_lifetime_seconds, jwt_value)
+    Cache.sadd("user:#{user.username}:tokens", jti)
 
     {:ok, token, claims}
   end
@@ -156,7 +156,7 @@ defmodule Clio.Auth do
     with {:ok, claims} <- Joken.peek_claims(token),
          :ok <- verify_claims_structure(claims),
          :ok <- verify_expiration(claims),
-         :ok <- verify_redis_exists(claims["jti"]),
+         :ok <- verify_cache_exists(claims["jti"]),
          {:ok, verified_claims} <- Joken.verify(token, signer),
          :ok <- verify_server_instance(verified_claims) do
       user = %{
@@ -179,8 +179,8 @@ defmodule Clio.Auth do
     if claims["exp"] > System.system_time(:second), do: :ok, else: {:error, :token_expired}
   end
 
-  defp verify_redis_exists(jti) do
-    if Redis.exists?("jwt:#{jti}"), do: :ok, else: {:error, :token_revoked}
+  defp verify_cache_exists(jti) do
+    if Cache.exists?("jwt:#{jti}"), do: :ok, else: {:error, :token_revoked}
   end
 
   defp verify_server_instance(claims) do
@@ -199,24 +199,24 @@ defmodule Clio.Auth do
     old_jti = old_claims["jti"]
 
     # Revoke old token
-    Redis.del("jwt:#{old_jti}")
-    Redis.srem("user:#{user.username}:tokens", old_jti)
+    Cache.del("jwt:#{old_jti}")
+    Cache.srem("user:#{user.username}:tokens", old_jti)
 
     # Issue new one
     issue_token(user)
   end
 
   def revoke_token(jti, username) do
-    Redis.del("jwt:#{jti}")
-    Redis.srem("user:#{username}:tokens", jti)
+    Cache.del("jwt:#{jti}")
+    Cache.srem("user:#{username}:tokens", jti)
     :ok
   end
 
   def revoke_all_user_tokens(username) do
-    case Redis.smembers("user:#{username}:tokens") do
+    case Cache.smembers("user:#{username}:tokens") do
       {:ok, jtis} ->
-        Enum.each(jtis, fn jti -> Redis.del("jwt:#{jti}") end)
-        Redis.del("user:#{username}:tokens")
+        Enum.each(jtis, fn jti -> Cache.del("jwt:#{jti}") end)
+        Cache.del("user:#{username}:tokens")
         :ok
 
       _ ->
