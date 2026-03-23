@@ -25,6 +25,10 @@ clio_umbrella/
 
 ### Security
 
+> **PoC note:** SSL/TLS and reverse-proxy configuration are intentionally skipped
+> to simplify setup. The app runs over plain HTTP. See `.env.example` for a full
+> list of what is omitted and what to add before any real deployment.
+
 | Layer | Implementation |
 |-------|----------------|
 | Authentication | PBKDF2-HMAC-SHA256 (310k iterations), JWT (HS256) with in-memory (Cachex) revocation |
@@ -35,6 +39,8 @@ clio_umbrella/
 | Rate Limiting | Hammer-based per-IP rate limiting (100 req/min general, 10 req/min auth) |
 | Audit | Automatic sensitive data redaction, comprehensive event logging |
 | Password Policy | 12-128 chars, mixed case, digit, special char, no SQL/XSS patterns |
+| Transport (SKIPPED) | No TLS — running plain HTTP. Add a reverse proxy with TLS for production. |
+| DB Transport (SKIPPED) | No SSL on PostgreSQL connection. Enable `ssl: true` in `runtime.exs` for production. |
 
 ## Quick Start
 
@@ -165,7 +171,7 @@ When using Docker, configuration is handled automatically. You can customize set
 
 2. **Edit `.env` with your preferences** (optional for development)
 
-3. **The Docker setup uses secure defaults** for development
+3. **The Docker setup uses convenient defaults** (see `.env.example` for PoC caveats)
 
 #### Manual Configuration
 
@@ -190,15 +196,15 @@ export PORT=4000
 export DATA_DIR="data"  # where audit logs are stored
 ```
 
-#### Generating Secure Keys
+#### Generating Keys
 
-For production, generate cryptographically secure keys:
+The default dev keys in `.env.example` work out of the box. To rotate them (recommended for any shared environment):
 
 ```bash
 # JWT Secret (32+ bytes)
 openssl rand -base64 32
 
-# Phoenix Secret Key Base (64+ bytes)  
+# Phoenix Secret Key Base (64+ bytes)
 openssl rand -base64 64
 
 # AES-256 Keys (32 bytes = 64 hex characters)
