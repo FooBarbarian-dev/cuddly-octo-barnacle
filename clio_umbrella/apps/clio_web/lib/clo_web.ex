@@ -48,7 +48,7 @@ defmodule CloWeb do
   def html do
     quote do
       use Phoenix.Component
-      import Phoenix.Controller, only: [get_csrf_token: 0, view_module: 1, view_template: 1]
+      import Phoenix.Controller, only: [get_csrf_token: 0]
       unquote(html_helpers())
     end
   end
@@ -57,6 +57,7 @@ defmodule CloWeb do
     quote do
       import Phoenix.HTML
       import Phoenix.Component
+      import CloWeb.Gettext
       unquote(verified_routes())
     end
   end

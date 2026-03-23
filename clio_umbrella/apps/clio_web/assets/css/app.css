@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@source "../../lib/clo_web/**/*.ex";
+@source "../../lib/clo_web/**/*.heex";
+@source "../../../deps/backpex/**/*.ex";
+@source "../../../deps/backpex/assets/js/**/*.js";
+@plugin "daisyui";
