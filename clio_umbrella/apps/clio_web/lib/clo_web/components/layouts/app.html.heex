@@ -1,1 +1,43 @@
-{@inner_content}
+<header class="bg-gray-800 shadow">
+  <div class="w-full px-2 sm:px-4 py-4">
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-4">
+        <h1 class="text-xl font-semibold text-white">Clio Logging Platform</h1>
+        <%= if assigns[:current_user] do %>
+          <.live_component
+            module={CloWeb.Components.OperationSwitcherComponent}
+            id="operation-switcher"
+            current_user={@current_user}
+            operations={assigns[:user_operations] || []}
+            active_operation={assigns[:active_operation]}
+          />
+        <% end %>
+      </div>
+      <div class="flex items-center gap-4">
+        <%= if assigns[:current_user] do %>
+          <span class="text-gray-300">Welcome, {@current_user.username}</span>
+          <%= if @current_user.role == :admin do %>
+            <span class="bg-red-900 text-red-200 text-xs font-medium px-2.5 py-0.5 rounded">Admin</span>
+          <% end %>
+          <button phx-click="logout" class="px-4 py-2 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
+            Logout
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="w-full px-2 sm:px-4 py-4">
+  <%= if Phoenix.Flash.get(@flash, :info) do %>
+    <div class="bg-blue-900 text-blue-200 rounded-md p-3 mb-4" role="alert">
+      {Phoenix.Flash.get(@flash, :info)}
+    </div>
+  <% end %>
+  <%= if Phoenix.Flash.get(@flash, :error) do %>
+    <div class="bg-red-900 text-red-200 rounded-md p-3 mb-4" role="alert">
+      {Phoenix.Flash.get(@flash, :error)}
+    </div>
+  <% end %>
+  {@inner_content}
+</main>

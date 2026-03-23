@@ -36,6 +36,40 @@ defmodule CloWeb.Router do
     plug CloWeb.Plugs.RateLimit, limit: 10, period: 60_000
   end
 
+  # ── Clio LiveView UI ──
+
+  # Public: login page
+  scope "/", CloWeb do
+    pipe_through :browser
+
+    live "/login", LoginLive, :index
+    get "/auth/callback", AuthCallbackController, :callback
+  end
+
+  # Authenticated LiveView routes
+  scope "/", CloWeb do
+    pipe_through :browser
+
+    live_session :authenticated,
+      on_mount: [{CloWeb.Hooks.RequireAuth, :default}] do
+      live "/", LogsLive, :index
+      live "/relations", RelationsLive, :index
+      live "/file-status", FileStatusLive, :index
+      live "/settings", SettingsLive, :index
+    end
+
+    live_session :clio_admin,
+      on_mount: [{CloWeb.Hooks.RequireAuth, :default}, {CloWeb.Hooks.RequireAdmin, :default}] do
+      live "/manage/operations", Admin.OperationsLive, :index
+      live "/manage/tags", Admin.TagsLive, :index
+      live "/manage/export", Admin.ExportLive, :index
+      live "/manage/sessions", Admin.SessionsLive, :index
+      live "/manage/api-keys", Admin.ApiKeysLive, :index
+      live "/manage/api-docs", Admin.ApiDocsLive, :index
+      live "/manage/log-management", Admin.LogManagementLive, :index
+    end
+  end
+
   # ── Admin panel (Backpex) ──
   scope "/admin", CloWeb do
     pipe_through :browser
