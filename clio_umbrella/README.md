@@ -8,7 +8,7 @@ CLIO is an Elixir/Phoenix umbrella application for capturing, organizing, analyz
 clio_umbrella/
   apps/
     clio/            # Core domain: schemas, contexts, auth, audit
-    clio_web/        # Phoenix API: controllers, plugs, router
+    clio_web/        # Phoenix web: JSON API + Backpex admin panel
     clio_relations/  # Relationship analysis engine
 ```
 
@@ -74,6 +74,7 @@ mix phx.server
 ```
 
 The API will be available at `http://localhost:4000/api`.
+The admin panel will be available at `http://localhost:4000/admin`.
 
 #### Docker Services
 
@@ -135,6 +136,7 @@ mix phx.server
 ```
 
 The API will be available at `http://localhost:4000/api`.
+The admin panel will be available at `http://localhost:4000/admin`.
 
 ### Configuration
 
@@ -268,6 +270,74 @@ curl http://localhost:4000/api/export/json \
   -H "Authorization: Bearer $TOKEN" \
   -o export.json
 ```
+
+## Admin Panel (Backpex)
+
+CLIO includes a browser-based admin panel built with [Backpex](https://hexdocs.pm/backpex) for managing all resources through a visual CRUD interface.
+
+### Accessing the Admin Panel
+
+Navigate to `http://localhost:4000/admin` in your browser. You will be redirected to a login page. Sign in with admin credentials (the same username/password used for the API).
+
+Only users with the `admin` role can access the panel. Non-admin users will see an "Admin access required" error.
+
+### Setup Requirements
+
+The admin panel requires frontend assets that are not needed by the JSON API. After installing dependencies, run:
+
+```bash
+# Install daisyUI (CSS framework used by Backpex)
+cd apps/clio_web/assets && npm install && cd -
+
+# Install Tailwind and esbuild standalone CLIs
+mix assets.setup
+
+# Build assets
+mix assets.build
+```
+
+In development, `mix phx.server` will automatically watch and rebuild assets via the configured esbuild/tailwind watchers.
+
+### Available Resources
+
+The admin panel provides full CRUD (create, read, update, delete) for all 13 data models:
+
+| Resource | Path | Description |
+|----------|------|-------------|
+| Logs | `/admin/logs` | Red team log entries with forensic fields |
+| Tags | `/admin/tags` | Categorized tags (technique, tool, target, etc.) |
+| Log Tags | `/admin/log-tags` | Log-to-tag assignments |
+| Operations | `/admin/operations` | Red team campaigns |
+| User Operations | `/admin/user-operations` | User-to-operation assignments |
+| Evidence Files | `/admin/evidence-files` | Evidence file metadata |
+| Log Templates | `/admin/log-templates` | Reusable log entry templates |
+| API Keys | `/admin/api-keys` | API key management |
+| Relations | `/admin/relations` | Discovered patterns and relationships |
+| File Statuses | `/admin/file-statuses` | DFIR file status tracking |
+| File Status History | `/admin/file-status-history` | File status change history |
+| Tag Relationships | `/admin/tag-relationships` | Tag co-occurrence and sequences |
+| Log Relationships | `/admin/log-relationships` | Relationships between log entries |
+
+### Architecture
+
+The admin panel runs alongside the existing JSON API without interfering:
+
+- **Auth**: Uses session-based authentication (separate from JWT API auth) via `CloWeb.Plugs.AdminSession` and a `CloWeb.Live.AdminAuth` LiveView on_mount hook. Login delegates to the same `Clio.Auth.authenticate/2` used by the API.
+- **Routes**: All admin routes live under `/admin`, using a `:browser` pipeline. The existing `/api` routes are unchanged.
+- **Layout**: Uses `Backpex.HTML.Layout.app_shell` with a sidebar for navigation between resources.
+- **LiveResources**: Each resource is a `Backpex.LiveResource` module in `lib/clo_web/live/admin/` that defines which fields to display, their types, and labels.
+
+### Key Dependencies Added
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `backpex` | `~> 0.17` | Admin panel framework |
+| `phoenix_live_view` | `~> 1.0` | Upgraded from `~> 0.19` for Backpex compatibility |
+| `phoenix_html` | `~> 4.1` | Upgraded from `~> 3.3` for Backpex compatibility |
+| `daisyui` | `^5.0.0` | CSS component library (npm, in `assets/`) |
+| `tailwind` | `~> 0.2` | Tailwind CSS v4 standalone CLI |
+| `esbuild` | `~> 0.8` | JavaScript bundler |
+| `gettext` | `~> 0.26` | Internationalization (required by Backpex) |
 
 ## API Reference
 
