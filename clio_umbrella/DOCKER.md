@@ -1,55 +1,44 @@
 # Docker Quick Reference for CLIO
 
-This document provides a quick reference for working with CLIO's Docker setup.
+Docker is used to run PostgreSQL. The application itself runs natively via `mix` for hot code reloading and easy development.
 
 ## Quick Start
 
 ```bash
-# One-command setup (recommended for new users)
-./setup.sh
+# Automated first-time setup (recommended)
+make dev
+mix phx.server
 
 # Or step-by-step:
-make setup      # Create directories and start services
-mix deps.get    # Install Elixir dependencies
-mix ecto.migrate # Run database migrations
-mix phx.server  # Start the application
+make up           # Start PostgreSQL (waits until ready)
+mix deps.get      # Install Elixir dependencies
+mix ecto.setup    # Create DB, run migrations, load seeds
+mix phx.server    # Start the application
+
+# Or use the setup script (does the same as above):
+./setup.sh
+mix phx.server
 ```
 
 ## Docker Services
 
-### Core Services (Always needed)
-
-| Service | Image | Port | Purpose |
-|---------|-------|------|---------|
-| `postgres` | postgres:18-alpine | 5432 | PostgreSQL 18 database with SCRAM-SHA-256 auth |
-
-### Optional Services
-
-| Service | Image | Port | Purpose |
-|---------|-------|------|---------|
-| `app` | clio:dev | 4000 | Application container (dev profile) |
-| `pgadmin` | dpage/pgadmin4 | 8080 | PostgreSQL web admin (tools profile) |
-| `postgres_test` | postgres:18-alpine | 5433 | Test database (test profile) |
+| Service | Image | Port | Profile | Purpose |
+|---------|-------|------|---------|---------|
+| `postgres` | postgres:18-alpine | 5432 | default | PostgreSQL 18 database |
+| `pgadmin` | dpage/pgadmin4 | 8080 | tools | PostgreSQL web admin |
+| `postgres_test` | postgres:18-alpine | 5433 | test | Isolated test database |
 
 ## Service Profiles
 
-Docker Compose uses profiles to group services:
-
 ```bash
-# Default profile (core services only)
+# Default profile (postgres only)
 docker compose up -d
 
-# Development profile (includes app container)
-docker compose --profile dev up -d
-
-# Tools profile (includes pgAdmin)
+# Tools profile (adds pgAdmin)
 docker compose --profile tools up -d
 
-# Test profile (includes test database)
+# Test profile (adds test database)
 docker compose --profile test up -d
-
-# Multiple profiles
-docker compose --profile dev --profile tools up -d
 ```
 
 ## Makefile Commands
@@ -57,21 +46,17 @@ docker compose --profile dev --profile tools up -d
 ### Service Management
 
 ```bash
-make up           # Start core services (postgres)
-make up-dev       # Start with application container
-make up-tools     # Start with management tools
-make up-all       # Start everything (dev + tools)
+make up           # Start PostgreSQL
+make up-tools     # Start with pgAdmin
 make down         # Stop all services
 make restart      # Restart core services
 ```
 
-### Development Workflow
+### First-Time Setup
 
 ```bash
-make dev          # Quick development setup
-make setup        # Create directories and start services
-make build        # Build application Docker image
-make clean        # Remove containers, volumes, and data
+make dev          # Full setup: start postgres, install deps, migrate, seed
+make setup        # Infrastructure only: start postgres and wait until ready
 ```
 
 ### Database Operations
@@ -80,34 +65,32 @@ make clean        # Remove containers, volumes, and data
 make migrate      # Run database migrations
 make seed         # Run database seeds
 make reset        # Reset database (drop, create, migrate, seed)
-make psql         # Connect to PostgreSQL
-make psql-test    # Connect to test database
-make backup-db    # Backup database
-make restore-db BACKUP_FILE=backup.sql  # Restore database
+make psql         # Connect to PostgreSQL shell
+make psql-test    # Connect to test database shell
+make backup-db    # Backup database to SQL file
+make restore-db BACKUP_FILE=backup.sql  # Restore from backup
 ```
 
 ### Logs and Monitoring
 
 ```bash
-make logs         # Show all service logs
-make logs-app     # Show application logs only
+make logs          # Show all service logs
 make logs-postgres # Show PostgreSQL logs only
-make health       # Check service health
-```
-
-### Application Development
-
-```bash
-make shell        # Open shell in application container
-make iex          # Open IEx shell in application container
+make health        # Check service health
 ```
 
 ### Testing
 
 ```bash
-make test         # Start test DB and run tests
-make test-setup   # Start test database only
-make test-watch   # Run tests in watch mode
+make test          # Start test DB and run all tests
+make test-setup    # Start test database only
+make test-watch    # Run tests in watch mode
+```
+
+### Cleanup
+
+```bash
+make clean         # Remove all containers, volumes, and local data (destructive)
 ```
 
 ## Direct Docker Commands
@@ -138,58 +121,30 @@ docker compose exec postgres psql -U postgres -d redteamlogger
 docker compose exec postgres pg_isready -U postgres -d redteamlogger
 ```
 
-### Application Container
+## PostgreSQL 18 Authentication
 
-```bash
-# Build application image
-docker compose build app
-
-# Run application container
-docker compose --profile dev up -d app
-
-# Execute commands in app container
-docker compose exec app mix ecto.migrate
-docker compose exec app iex -S mix
-
-# Open shell in app container
-docker compose exec app sh
-```
-
-## PostgreSQL 18 Changes
-
-PostgreSQL 18+ uses SCRAM-SHA-256 authentication by default. Our Docker setup handles this automatically with:
+PostgreSQL 18+ uses SCRAM-SHA-256 authentication by default. The Docker setup handles this automatically:
 
 ```yaml
 environment:
   POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
 ```
 
-### Key Differences from Older Versions:
-
-- **Authentication Method**: SCRAM-SHA-256 instead of MD5
-- **Password Storage**: More secure password hashing
-- **Client Compatibility**: Requires compatible client drivers (Elixir's Postgrex supports this)
+Elixir's `postgrex` driver supports SCRAM-SHA-256 out of the box — no extra configuration required.
 
 ### Troubleshooting Authentication
 
-If you encounter authentication issues:
-
 ```bash
-# Check authentication methods
+# Check authentication method in use
 docker compose exec postgres cat /var/lib/postgresql/data/pg_hba.conf
 
 # Check PostgreSQL version
 docker compose exec postgres psql -U postgres -c "SELECT version();"
-
-# Check user authentication method
-docker compose exec postgres psql -U postgres -c "\du+"
 ```
 
 ## Environment Configuration
 
 ### Default Development Configuration
-
-The Docker setup uses these defaults:
 
 ```yaml
 # Database
@@ -197,10 +152,10 @@ POSTGRES_USER: postgres
 POSTGRES_PASSWORD: postgres
 POSTGRES_DB: redteamlogger
 
-# Application
+# Application (set in .env)
 ADMIN_PASSWORD: AdminPassword123!
 USER_PASSWORD: UserPassword123!
-JWT_SECRET: dev_jwt_secret_at_least_32_bytes_long_for_development_only
+JWT_SECRET: (from .env)
 ```
 
 ### Custom Configuration
@@ -219,93 +174,72 @@ JWT_SECRET: dev_jwt_secret_at_least_32_bytes_long_for_development_only
 
 ## Data Persistence
 
-### Volume Mounts
+### Docker Volume Mounts
 
 ```yaml
 volumes:
-  - postgres_data:/var/lib/postgresql/data    # PostgreSQL data
+  - postgres_data:/var/lib/postgresql/data    # PostgreSQL data (persists between restarts)
   - pgadmin_data:/var/lib/pgadmin            # pgAdmin settings
-  - ./data/app:/app/data                     # Application data (audit logs)
 ```
 
 ### Local Data Directories
 
 ```
 data/
-├── postgres/     # PostgreSQL data files
+├── postgres/     # (reserved for local postgres data if needed)
 └── app/          # Application data (audit logs, uploads)
 ```
 
 ### Backup Strategy
 
 ```bash
-# Database backup
+# Database backup (creates timestamped .sql file)
 make backup-db
 
-# Manual backup with timestamp
+# Manual backup
 docker compose exec postgres pg_dump -U postgres redteamlogger > backup_$(date +%Y%m%d_%H%M%S).sql
 
-# Backup with Docker volume
-docker run --rm -v clio_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_backup.tar.gz -C /data .
+# Restore from backup
+make restore-db BACKUP_FILE=backup_20240101_120000.sql
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### Services Won't Start
 
-**Services won't start:**
 ```bash
 # Check Docker daemon
 docker info
 
 # Check port conflicts
-netstat -tlnp | grep -E ':(4000|5432|8080)'
+netstat -tlnp | grep -E ':(4000|5432|5433|8080)'
 
 # Check logs for errors
 make logs
 ```
 
-**Database connection issues:**
+### Database Connection Issues
+
 ```bash
 # Check PostgreSQL is ready
 make health
 
-# Check authentication
-docker compose exec postgres psql -U postgres -d redteamlogger
+# Connect directly
+make psql
 
-# Reset database
+# Reset the database
 make reset
 ```
 
-**Application won't connect:**
-```bash
-# Check environment variables
-docker compose exec app env | grep DATABASE
-
-# Check services are accessible
-docker compose exec app ping postgres
-```
-
-### Reset Everything
+### Fresh Start
 
 ```bash
 # Complete cleanup (WARNING: destroys all data)
 make clean
 
 # Fresh setup
-make setup
-```
-
-### Performance Tuning
-
-**PostgreSQL:**
-```bash
-# Connect and check settings
-make psql
-# In psql:
-SHOW shared_buffers;
-SHOW max_connections;
-SHOW work_mem;
+make dev
+mix phx.server
 ```
 
 ## Security Notes
@@ -313,32 +247,26 @@ SHOW work_mem;
 ### Development vs Production
 
 **Development (Docker Compose):**
-- Uses default passwords
+- Uses default passwords (change immediately after first login)
 - No SSL/TLS encryption
 - Exposes all ports to localhost
-- Uses development encryption keys
 
 **Production:**
-- Generate secure random passwords
+- Generate secure random passwords and keys (see `.env.example` for commands)
 - Enable SSL/TLS for database connections
-- Use proper firewall rules
-- Generate production encryption keys
-- Use secrets management system
+- Use proper firewall rules and a secrets management system
 
 ### Key Generation for Production
 
 ```bash
-# Generate secure keys
-openssl rand -base64 32  # JWT_SECRET
-openssl rand -base64 64  # SECRET_KEY_BASE
-openssl rand -hex 32     # FIELD_ENCRYPTION_KEY
-openssl rand -hex 32     # CACHE_ENCRYPTION_KEY
-openssl rand -base64 32  # CLOAK_KEY
+openssl rand -base64 32   # JWT_SECRET, ADMIN_SECRET, CLOAK_KEY
+openssl rand -base64 64   # SECRET_KEY_BASE
+openssl rand -hex 32      # FIELD_ENCRYPTION_KEY, CACHE_ENCRYPTION_KEY
 ```
 
-## Integration with CI/CD
+## CI/CD Integration
 
-### GitHub Actions Example
+### GitHub Actions
 
 ```yaml
 services:
@@ -352,10 +280,9 @@ services:
       --health-interval 10s
       --health-timeout 5s
       --health-retries 5
-
 ```
 
-### GitLab CI Example
+### GitLab CI
 
 ```yaml
 services:

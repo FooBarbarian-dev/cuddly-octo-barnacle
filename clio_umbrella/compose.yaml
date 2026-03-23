@@ -40,6 +40,27 @@ services:
     profiles:
       - tools
 
+  # Test database (separate instance so tests don't touch dev data)
+  postgres_test:
+    image: postgres:18-alpine
+    container_name: clio_postgres_test
+    environment:
+      POSTGRES_DB: redteamlogger_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d redteamlogger_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - clio_network
+    profiles:
+      - test
+
 volumes:
   postgres_data:
     driver: local

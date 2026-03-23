@@ -1,7 +1,7 @@
 # CLIO Development Makefile
 # Convenient commands for Docker-based development
 
-.PHONY: help setup up down logs build clean test migrate seed reset psql
+.PHONY: help setup up down logs clean test migrate seed reset psql tools health dev
 
 # Default target
 help: ## Show this help message
@@ -11,33 +11,45 @@ help: ## Show this help message
 	@echo ""
 	@echo "Profiles:"
 	@echo "  Default: postgres (core services only)"
-	@echo "  dev:     Includes application container"
 	@echo "  tools:   Includes pgAdmin"
 	@echo "  test:    Includes test database"
 
-# Initial setup
-setup: ## Create data directories and start services
+# Initial setup - starts infrastructure only
+setup: ## Create data directories and start PostgreSQL (run mix deps.get && mix ecto.setup next)
 	mkdir -p data/postgres data/app
 	docker compose up -d postgres
-	@echo "Waiting for services to be ready..."
-	sleep 10
-	make migrate
+	@echo "Waiting for PostgreSQL to be ready..."
+	@until docker compose exec -T postgres pg_isready -U postgres -d redteamlogger >/dev/null 2>&1; do printf '.'; sleep 1; done
+	@echo ""
+	@echo "PostgreSQL is ready!"
+	@echo ""
+	@echo "Complete setup by running:"
+	@echo "  mix deps.get && mix ecto.setup"
+
+# Full first-time development setup
+dev: ## First-time setup: start services, install deps, migrate, and seed
+	mkdir -p data/postgres data/app
+	@if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env; echo "Created .env from template"; fi
+	docker compose up -d postgres
+	@echo "Waiting for PostgreSQL to be ready..."
+	@until docker compose exec -T postgres pg_isready -U postgres -d redteamlogger >/dev/null 2>&1; do printf '.'; sleep 1; done
+	@echo ""
+	mix deps.get
+	mix ecto.setup
+	@echo ""
+	@echo "Setup complete! Start the application:"
+	@echo "  mix phx.server"
+	@echo "  iex -S mix phx.server   # with interactive shell"
 
 # Service management
 up: ## Start core services (postgres)
 	docker compose up -d postgres
 
-up-dev: ## Start all services including application
-	docker compose --profile dev up -d
-
-up-tools: ## Start services with management tools
+up-tools: ## Start services with management tools (pgAdmin)
 	docker compose --profile tools up -d
 
-up-all: ## Start everything (dev + tools)
-	docker compose --profile dev --profile tools up -d
-
 down: ## Stop all services
-	docker compose --profile dev --profile tools --profile test down
+	docker compose --profile tools --profile test down
 
 restart: down up ## Restart core services
 
@@ -45,21 +57,8 @@ restart: down up ## Restart core services
 logs: ## Show logs from all services
 	docker compose logs -f
 
-logs-app: ## Show application logs
-	docker compose logs -f app
-
 logs-postgres: ## Show PostgreSQL logs
 	docker compose logs -f postgres
-
-# Application management
-build: ## Build application Docker image
-	docker compose build app
-
-shell: ## Open shell in application container
-	docker compose exec app sh
-
-iex: ## Open IEx shell in application container
-	docker compose exec app iex -S mix
 
 # Database operations
 migrate: ## Run database migrations
@@ -81,7 +80,8 @@ psql-test: ## Connect to test PostgreSQL database
 test-setup: ## Start test database
 	docker compose --profile test up -d postgres_test
 	@echo "Waiting for test database..."
-	sleep 5
+	@until docker compose exec -T postgres_test pg_isready -U postgres -d redteamlogger_test >/dev/null 2>&1; do printf '.'; sleep 1; done
+	@echo ""
 
 test: test-setup ## Run tests
 	MIX_ENV=test mix test
@@ -90,45 +90,22 @@ test-watch: test-setup ## Run tests in watch mode
 	MIX_ENV=test mix test.watch
 
 # Cleanup
-clean: ## Remove all containers, volumes, and data
-	docker compose --profile dev --profile tools --profile test down -v
+clean: ## Remove all containers, volumes, and data (WARNING: destroys all data)
+	docker compose --profile tools --profile test down -v
 	docker system prune -f
 	sudo rm -rf data/
-
-clean-build: ## Remove application build artifacts
-	rm -rf _build deps
-	docker compose build --no-cache app
 
 # Health checks
 health: ## Check service health
 	@echo "Checking PostgreSQL..."
-	@docker compose exec postgres pg_isready -U postgres -d redteamlogger && echo "✅ PostgreSQL is ready" || echo "❌ PostgreSQL is not ready"
+	@docker compose exec postgres pg_isready -U postgres -d redteamlogger && echo "PostgreSQL is ready" || echo "PostgreSQL is not ready"
 
-# Development helpers
-dev: setup up-dev ## Quick start for development (setup + start with app)
-	@echo "🚀 CLIO development environment is ready!"
-	@echo ""
-	@echo "Services:"
-	@echo "  - Application: http://localhost:4000"
-	@echo "  - API: http://localhost:4000/api"
-	@echo ""
-	@echo "Useful commands:"
-	@echo "  make logs-app    # View application logs"
-	@echo "  make iex         # Open IEx shell"
-	@echo "  make test        # Run tests"
-	@echo ""
-
-tools: up-tools ## Start management tools
-	@echo "🛠️ Management tools started!"
+# Management tools
+tools: up-tools ## Start management tools (pgAdmin)
+	@echo "Management tools started!"
 	@echo ""
 	@echo "Tools:"
-	@echo "  - pgAdmin: http://localhost:8080 (admin@clio.local / admin)"
-
-# Production-like setup
-prod-setup: ## Setup for production-like testing
-	@echo "⚠️  This creates a production-like environment with proper secrets"
-	@echo "Make sure to set proper environment variables in .env.prod"
-	docker compose -f compose.yaml -f compose.prod.yaml up -d
+	@echo "  pgAdmin: http://localhost:8080 (admin@clio.local / admin)"
 
 # Backup and restore
 backup-db: ## Backup database
