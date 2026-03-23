@@ -339,6 +339,23 @@ defmodule Clio.SchemasTest do
   # ── TagRelationship Schema ──
 
   describe "TagRelationship.changeset/2" do
+    test "valid changeset" do
+      now = DateTime.utc_now()
+      attrs = %{
+        source_tag_id: 1,
+        target_tag_id: 2,
+        cooccurrence_count: 5,
+        sequence_count: 3,
+        correlation_strength: 0.8,
+        first_seen: now,
+        last_seen: now,
+        metadata: %{"context" => "test"}
+      }
+
+      changeset = TagRelationship.changeset(%TagRelationship{}, attrs)
+      assert changeset.valid?
+    end
+
     test "requires source_tag_id and target_tag_id" do
       changeset = TagRelationship.changeset(%TagRelationship{}, %{})
       errors = errors_on(changeset)
