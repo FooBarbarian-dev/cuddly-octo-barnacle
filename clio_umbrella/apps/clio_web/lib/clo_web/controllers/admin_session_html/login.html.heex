@@ -1,0 +1,49 @@
+<div class="flex min-h-screen items-center justify-center bg-base-200">
+  <div class="card w-96 bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title justify-center">Clio Admin Login</h2>
+
+      <%= if @error do %>
+        <div class="alert alert-error">
+          <span><%= @error %></span>
+        </div>
+      <% end %>
+
+      <form action={~p"/admin/session/login"} method="post">
+        <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+
+        <div class="form-control w-full">
+          <label class="label" for="username">
+            <span class="label-text">Username</span>
+          </label>
+          <input
+            type="text"
+            name="username"
+            id="username"
+            class="input input-bordered w-full"
+            required
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-control w-full mt-4">
+          <label class="label" for="password">
+            <span class="label-text">Password</span>
+          </label>
+          <input
+            type="password"
+            name="password"
+            id="password"
+            class="input input-bordered w-full"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <div class="form-control mt-6">
+          <button type="submit" class="btn btn-primary w-full">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

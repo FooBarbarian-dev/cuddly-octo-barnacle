@@ -1,9 +1,19 @@
 defmodule CloWeb.Router do
-  @moduledoc "API router with public, authenticated, and admin-only route scopes."
+  @moduledoc "API router with public, authenticated, and admin-only route scopes, plus Backpex admin panel."
   use CloWeb, :router
+  import Backpex.Router
 
   pipeline :api do
     plug :accepts, ["json"]
+  end
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {CloWeb.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
   end
 
   pipeline :authenticated do
@@ -14,12 +24,52 @@ defmodule CloWeb.Router do
     plug CloWeb.Plugs.Admin
   end
 
+  pipeline :admin_session do
+    plug CloWeb.Plugs.AdminSession
+  end
+
   pipeline :rate_limited do
     plug CloWeb.Plugs.RateLimit, limit: 100, period: 60_000
   end
 
   pipeline :auth_rate_limited do
     plug CloWeb.Plugs.RateLimit, limit: 10, period: 60_000
+  end
+
+  # ── Admin panel (Backpex) ──
+  scope "/admin", CloWeb do
+    pipe_through :browser
+
+    # Public admin login
+    get "/session/login", AdminSessionController, :login
+    post "/session/login", AdminSessionController, :create
+    delete "/session/logout", AdminSessionController, :logout
+  end
+
+  scope "/admin", CloWeb do
+    pipe_through [:browser, :admin_session]
+    backpex_routes()
+
+    live_session :admin,
+      on_mount: [
+        {CloWeb.Live.AdminAuth, :default},
+        {Backpex.InitAssigns, :default}
+      ],
+      layout: {CloWeb.Layouts, :admin} do
+      live_resources "/logs", Live.Admin.LogLive
+      live_resources "/tags", Live.Admin.TagLive
+      live_resources "/log-tags", Live.Admin.LogTagLive
+      live_resources "/operations", Live.Admin.OperationLive
+      live_resources "/user-operations", Live.Admin.UserOperationLive
+      live_resources "/evidence-files", Live.Admin.EvidenceFileLive
+      live_resources "/log-templates", Live.Admin.LogTemplateLive
+      live_resources "/api-keys", Live.Admin.ApiKeyLive
+      live_resources "/relations", Live.Admin.RelationLive
+      live_resources "/file-statuses", Live.Admin.FileStatusLive
+      live_resources "/file-status-history", Live.Admin.FileStatusHistoryLive
+      live_resources "/tag-relationships", Live.Admin.TagRelationshipLive
+      live_resources "/log-relationships", Live.Admin.LogRelationshipLive
+    end
   end
 
   # ── Public routes ──

@@ -1,0 +1,64 @@
+<Backpex.HTML.Layout.app_shell fluid={@fluid?} live_resource={@live_resource}>
+  <:topbar>
+    <Backpex.HTML.Layout.topbar_branding label="Clio Admin" />
+
+    <Backpex.HTML.Layout.topbar_dropdown class="mr-2 md:mr-0">
+      <:label>
+        <div class="btn btn-square btn-ghost">
+          <Backpex.HTML.CoreComponents.icon name="hero-user" class="size-6" />
+        </div>
+      </:label>
+      <li>
+        <.link href="/admin/session/logout" method="delete" class="text-error flex justify-between hover:bg-base-200">
+          <p>Logout</p>
+          <Backpex.HTML.CoreComponents.icon name="hero-arrow-right-on-rectangle" class="size-5" />
+        </.link>
+      </li>
+    </Backpex.HTML.Layout.topbar_dropdown>
+  </:topbar>
+
+  <:sidebar>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/logs"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-document-text" class="size-5" /> Logs
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/tags"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-tag" class="size-5" /> Tags
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/log-tags"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-link" class="size-5" /> Log Tags
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/operations"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-shield-check" class="size-5" /> Operations
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/user-operations"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-user-group" class="size-5" /> User Operations
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/evidence-files"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-paper-clip" class="size-5" /> Evidence Files
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/log-templates"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-document-duplicate" class="size-5" /> Log Templates
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/api-keys"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-key" class="size-5" /> API Keys
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/relations"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-arrows-right-left" class="size-5" /> Relations
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/file-statuses"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-document-magnifying-glass" class="size-5" /> File Statuses
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/file-status-history"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-clock" class="size-5" /> File Status History
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/tag-relationships"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-circle-stack" class="size-5" /> Tag Relationships
+    </Backpex.HTML.Layout.sidebar_item>
+    <Backpex.HTML.Layout.sidebar_item current_url={@current_url} navigate={~p"/admin/log-relationships"}>
+      <Backpex.HTML.CoreComponents.icon name="hero-arrows-pointing-in" class="size-5" /> Log Relationships
+    </Backpex.HTML.Layout.sidebar_item>
+  </:sidebar>
+
+  <Backpex.HTML.Layout.flash_messages flash={@flash} />
+  {render_slot(@inner_block)}
+</Backpex.HTML.Layout.app_shell>
