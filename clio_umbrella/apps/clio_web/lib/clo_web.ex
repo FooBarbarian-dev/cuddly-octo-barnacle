@@ -57,6 +57,7 @@ defmodule CloWeb do
     quote do
       import Phoenix.HTML
       import Phoenix.Component
+      import CloWeb.ClioComponents
       import CloWeb.Gettext
       unquote(verified_routes())
     end
