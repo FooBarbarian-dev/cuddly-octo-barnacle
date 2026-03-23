@@ -43,8 +43,8 @@ check_prerequisites() {
         exit 1
     fi
 
-    if ! command_exists docker-compose; then
-        print_error "Docker Compose is not installed. Please install Docker Compose first."
+    if ! docker compose version >/dev/null 2>&1; then
+        print_error "Docker Compose plugin is not installed. Please install it first."
         exit 1
     fi
 
@@ -87,16 +87,16 @@ start_services() {
     print_status "Starting Docker services..."
 
     # Stop any existing services
-    docker-compose down >/dev/null 2>&1 || true
+    docker compose down >/dev/null 2>&1 || true
 
     # Start PostgreSQL
-    docker-compose up -d postgres
+    docker compose up -d postgres
 
     print_status "Waiting for services to be ready..."
 
     # Wait for PostgreSQL to be ready
     for i in {1..30}; do
-        if docker-compose exec -T postgres pg_isready -U postgres -d redteamlogger >/dev/null 2>&1; then
+        if docker compose exec -T postgres pg_isready -U postgres -d redteamlogger >/dev/null 2>&1; then
             break
         fi
         sleep 2

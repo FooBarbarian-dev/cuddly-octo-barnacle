@@ -37,19 +37,19 @@ Docker Compose uses profiles to group services:
 
 ```bash
 # Default profile (core services only)
-docker-compose up -d
+docker compose up -d
 
 # Development profile (includes app container)
-docker-compose --profile dev up -d
+docker compose --profile dev up -d
 
 # Tools profile (includes pgAdmin)
-docker-compose --profile tools up -d
+docker compose --profile tools up -d
 
 # Test profile (includes test database)
-docker-compose --profile test up -d
+docker compose --profile test up -d
 
 # Multiple profiles
-docker-compose --profile dev --profile tools up -d
+docker compose --profile dev --profile tools up -d
 ```
 
 ## Makefile Commands
@@ -116,43 +116,43 @@ make test-watch   # Run tests in watch mode
 
 ```bash
 # Start services
-docker-compose up -d postgres
+docker compose up -d postgres
 
 # Stop services
-docker-compose down
+docker compose down
 
 # View logs
-docker-compose logs -f postgres
+docker compose logs -f postgres
 
 # Check status
-docker-compose ps
+docker compose ps
 ```
 
 ### Database Access
 
 ```bash
 # PostgreSQL shell
-docker-compose exec postgres psql -U postgres -d redteamlogger
+docker compose exec postgres psql -U postgres -d redteamlogger
 
 # Check PostgreSQL is ready
-docker-compose exec postgres pg_isready -U postgres -d redteamlogger
+docker compose exec postgres pg_isready -U postgres -d redteamlogger
 ```
 
 ### Application Container
 
 ```bash
 # Build application image
-docker-compose build app
+docker compose build app
 
 # Run application container
-docker-compose --profile dev up -d app
+docker compose --profile dev up -d app
 
 # Execute commands in app container
-docker-compose exec app mix ecto.migrate
-docker-compose exec app iex -S mix
+docker compose exec app mix ecto.migrate
+docker compose exec app iex -S mix
 
 # Open shell in app container
-docker-compose exec app sh
+docker compose exec app sh
 ```
 
 ## PostgreSQL 18 Changes
@@ -176,13 +176,13 @@ If you encounter authentication issues:
 
 ```bash
 # Check authentication methods
-docker-compose exec postgres cat /var/lib/postgresql/data/pg_hba.conf
+docker compose exec postgres cat /var/lib/postgresql/data/pg_hba.conf
 
 # Check PostgreSQL version
-docker-compose exec postgres psql -U postgres -c "SELECT version();"
+docker compose exec postgres psql -U postgres -c "SELECT version();"
 
 # Check user authentication method
-docker-compose exec postgres psql -U postgres -c "\du+"
+docker compose exec postgres psql -U postgres -c "\du+"
 ```
 
 ## Environment Configuration
@@ -243,7 +243,7 @@ data/
 make backup-db
 
 # Manual backup with timestamp
-docker-compose exec postgres pg_dump -U postgres redteamlogger > backup_$(date +%Y%m%d_%H%M%S).sql
+docker compose exec postgres pg_dump -U postgres redteamlogger > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Backup with Docker volume
 docker run --rm -v clio_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_backup.tar.gz -C /data .
@@ -271,7 +271,7 @@ make logs
 make health
 
 # Check authentication
-docker-compose exec postgres psql -U postgres -d redteamlogger
+docker compose exec postgres psql -U postgres -d redteamlogger
 
 # Reset database
 make reset
@@ -280,10 +280,10 @@ make reset
 **Application won't connect:**
 ```bash
 # Check environment variables
-docker-compose exec app env | grep DATABASE
+docker compose exec app env | grep DATABASE
 
 # Check services are accessible
-docker-compose exec app ping postgres
+docker compose exec app ping postgres
 ```
 
 ### Reset Everything

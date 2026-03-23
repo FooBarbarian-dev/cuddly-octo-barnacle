@@ -52,7 +52,7 @@ data/
 
 # Docker files themselves
 Dockerfile*
-docker-compose*.yml
+compose*.yaml
 .dockerignore
 
 # CI/CD

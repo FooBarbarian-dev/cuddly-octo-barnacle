@@ -18,48 +18,48 @@ help: ## Show this help message
 # Initial setup
 setup: ## Create data directories and start services
 	mkdir -p data/postgres data/app
-	docker-compose up -d postgres
+	docker compose up -d postgres
 	@echo "Waiting for services to be ready..."
 	sleep 10
 	make migrate
 
 # Service management
 up: ## Start core services (postgres)
-	docker-compose up -d postgres
+	docker compose up -d postgres
 
 up-dev: ## Start all services including application
-	docker-compose --profile dev up -d
+	docker compose --profile dev up -d
 
 up-tools: ## Start services with management tools
-	docker-compose --profile tools up -d
+	docker compose --profile tools up -d
 
 up-all: ## Start everything (dev + tools)
-	docker-compose --profile dev --profile tools up -d
+	docker compose --profile dev --profile tools up -d
 
 down: ## Stop all services
-	docker-compose --profile dev --profile tools --profile test down
+	docker compose --profile dev --profile tools --profile test down
 
 restart: down up ## Restart core services
 
 # Logs
 logs: ## Show logs from all services
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-app: ## Show application logs
-	docker-compose logs -f app
+	docker compose logs -f app
 
 logs-postgres: ## Show PostgreSQL logs
-	docker-compose logs -f postgres
+	docker compose logs -f postgres
 
 # Application management
 build: ## Build application Docker image
-	docker-compose build app
+	docker compose build app
 
 shell: ## Open shell in application container
-	docker-compose exec app sh
+	docker compose exec app sh
 
 iex: ## Open IEx shell in application container
-	docker-compose exec app iex -S mix
+	docker compose exec app iex -S mix
 
 # Database operations
 migrate: ## Run database migrations
@@ -72,14 +72,14 @@ reset: ## Reset database (drop, create, migrate, seed)
 	mix ecto.reset
 
 psql: ## Connect to PostgreSQL database
-	docker-compose exec postgres psql -U postgres -d redteamlogger
+	docker compose exec postgres psql -U postgres -d redteamlogger
 
 psql-test: ## Connect to test PostgreSQL database
-	docker-compose exec postgres_test psql -U postgres -d redteamlogger_test
+	docker compose exec postgres_test psql -U postgres -d redteamlogger_test
 
 # Testing
 test-setup: ## Start test database
-	docker-compose --profile test up -d postgres_test
+	docker compose --profile test up -d postgres_test
 	@echo "Waiting for test database..."
 	sleep 5
 
@@ -91,18 +91,18 @@ test-watch: test-setup ## Run tests in watch mode
 
 # Cleanup
 clean: ## Remove all containers, volumes, and data
-	docker-compose --profile dev --profile tools --profile test down -v
+	docker compose --profile dev --profile tools --profile test down -v
 	docker system prune -f
 	sudo rm -rf data/
 
 clean-build: ## Remove application build artifacts
 	rm -rf _build deps
-	docker-compose build --no-cache app
+	docker compose build --no-cache app
 
 # Health checks
 health: ## Check service health
 	@echo "Checking PostgreSQL..."
-	@docker-compose exec postgres pg_isready -U postgres -d redteamlogger && echo "✅ PostgreSQL is ready" || echo "❌ PostgreSQL is not ready"
+	@docker compose exec postgres pg_isready -U postgres -d redteamlogger && echo "✅ PostgreSQL is ready" || echo "❌ PostgreSQL is not ready"
 
 # Development helpers
 dev: setup up-dev ## Quick start for development (setup + start with app)
@@ -128,12 +128,12 @@ tools: up-tools ## Start management tools
 prod-setup: ## Setup for production-like testing
 	@echo "⚠️  This creates a production-like environment with proper secrets"
 	@echo "Make sure to set proper environment variables in .env.prod"
-	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+	docker compose -f compose.yaml -f compose.prod.yaml up -d
 
 # Backup and restore
 backup-db: ## Backup database
-	docker-compose exec postgres pg_dump -U postgres redteamlogger > backup_$(shell date +%Y%m%d_%H%M%S).sql
+	docker compose exec postgres pg_dump -U postgres redteamlogger > backup_$(shell date +%Y%m%d_%H%M%S).sql
 
 restore-db: ## Restore database from backup (specify BACKUP_FILE)
 	@if [ -z "$(BACKUP_FILE)" ]; then echo "Please specify BACKUP_FILE=<filename>"; exit 1; fi
-	docker-compose exec -T postgres psql -U postgres redteamlogger < $(BACKUP_FILE)
+	docker compose exec -T postgres psql -U postgres redteamlogger < $(BACKUP_FILE)
